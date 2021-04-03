@@ -3,9 +3,15 @@ package main
 import "log"
 
 func main() {
+
+	Pid := 1
 	if flagPid > 0 {
-		log.Println(NewProcess(flagPid))
-	} else {
-		log.Println(NewProcess(1))
+		Pid = flagPid
 	}
+
+	p, err := NewProcess(Pid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(p)
 }

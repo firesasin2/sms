@@ -23,6 +23,19 @@ type Process struct {
 	Gid       []int32
 	FDSize    int
 	Groups    int
+	VmPeak    int
+	VmSize    int
+	VmLck     int
+	VmPin     int
+	VmHWM     int
+	VmRSS     int
+
+	VmData int
+	VmStk  int
+	VmExe  int
+	VmLib  int
+	VmPTE  int
+	VmSwap int
 
 	Threads    int
 	NoNewPrivs int
@@ -62,6 +75,7 @@ func (p *Process) GetProcessStatus() error {
 	for w.Scan() {
 		line := w.Text()
 		w := strings.Fields(line)
+		// 2개 이상의 인자값을 갖는 line만 분석합니다.(가정: 1번째 인자는 속성이름, 2번째 인자부터는 값)
 		if len(w) < 2 {
 			continue
 		}
@@ -134,6 +148,149 @@ func (p *Process) GetProcessStatus() error {
 				return err
 			}
 			p.Groups = value
+
+		case strings.HasPrefix(line, "VmPeak:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmPeak = value * 1024
+
+		case strings.HasPrefix(line, "VmSize:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmSize = value * 1024
+
+		case strings.HasPrefix(line, "VmPin:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmPin = value * 1024
+
+		case strings.HasPrefix(line, "VmHWM:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmHWM = value * 1024
+
+		case strings.HasPrefix(line, "VmRSS:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmRSS = value * 1024
+
+		case strings.HasPrefix(line, "VmData:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmData = value * 1024
+
+		case strings.HasPrefix(line, "VmStk:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmStk = value * 1024
+
+		case strings.HasPrefix(line, "VmExe:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmExe = value * 1024
+
+		case strings.HasPrefix(line, "VmLib:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmLib = value * 1024
+
+		case strings.HasPrefix(line, "VmPTE:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmPTE = value * 1024
+
+		case strings.HasPrefix(line, "VmSwap:"):
+			if len(w) != 3 {
+				continue
+			}
+			if w[2] != "kB" {
+				continue
+			}
+			value, err := strconv.Atoi(w[1])
+			if err != nil {
+				return err
+			}
+			p.VmSwap = value * 1024
 
 		case strings.HasPrefix(line, "Threads:"):
 			value, err := strconv.Atoi(w[1])
