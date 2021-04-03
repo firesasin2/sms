@@ -1,9 +1,11 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
 func main() {
-	log.Println(NewProcess(1))
+	if flagPid > 0 {
+		log.Println(NewProcess(flagPid))
+	} else {
+		log.Println(NewProcess(1))
+	}
 }
