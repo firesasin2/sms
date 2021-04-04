@@ -7,15 +7,17 @@ import (
 )
 
 var (
-	flagHelp    bool
-	flagVersion bool
-	flagPid     int
+	flagHelp     bool
+	flagVersion  bool
+	flagPid      int
+	flagInterval int
 )
 
 func init() {
 	flag.BoolVar(&flagHelp, "h", false, "도움말")
 	flag.BoolVar(&flagVersion, "v", false, "버전")
-	flag.IntVar(&flagPid, "p", 0, "프로세스아이디")
+	flag.IntVar(&flagPid, "p", 1, "프로세스 아이디")
+	flag.IntVar(&flagInterval, "i", 20, "수집 주기")
 	flag.Parse()
 
 	if flagHelp {
@@ -35,6 +37,10 @@ func PrintHelp() {
 	fmt.Println(`  버전`)
 	fmt.Println(`  -h`)
 	fmt.Println(`  도움말`)
+	fmt.Println(`  -p`)
+	fmt.Println(`  프로세스 아이디`)
+	fmt.Println(`  -i`)
+	fmt.Println(`  수집 주기`)
 }
 
 // version info
