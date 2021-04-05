@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -42,6 +44,10 @@ type Process struct {
 	Seccomp    int
 }
 
+type Processes struct {
+	pss []Process
+}
+
 // 프로세스 정보를 가져옵니다.
 func NewProcess(pid int) (Process, error) {
 	p := Process{
@@ -57,9 +63,57 @@ func NewProcess(pid int) (Process, error) {
 		return p, fmt.Errorf("pid의 프로세스가 없습니다. : %d", pid)
 	}
 
-	p.GetProcessStatus()
-
 	return p, nil
+}
+
+// /Proc 밑의 프로세스들을 가지고 옵니다.
+func NewProcesses() (Processes, error) {
+	var pss Processes
+
+	fss, err := ioutil.ReadDir("/proc/")
+	if err != nil {
+		return pss, err
+	}
+
+	// /proc Dir를 순회합니다.
+	for _, fs := range fss {
+		if !fs.IsDir() {
+			return pss, err
+		}
+
+		Pid, err := strconv.Atoi(fs.Name())
+		if err != nil {
+			continue
+		}
+		// 프로세스 객체를 생성합니다.
+		p, err := NewProcess(Pid)
+		if err != nil {
+			continue
+		}
+
+		// 프로세스 상태 정보를 가져옵니다.
+		err = p.GetProcessStatus()
+		if err != nil {
+			continue
+		}
+
+		pss.pss = append(pss.pss, p)
+	}
+	return pss, nil
+}
+
+// /Proc 밑의 프로세스들에서 이름으로 프로세스를 찾습니다.
+func (pss *Processes) FindProcessByName(name string) (Process, error) {
+	for _, ps := range pss.pss {
+		matched, err := regexp.MatchString(name, ps.Name)
+		if err != nil {
+			return ps, err
+		}
+		if matched {
+			return ps, nil
+		}
+	}
+	return Process{}, fmt.Errorf("프로세스 이름을 찾을 수 없습니다.")
 }
 
 // 프로세스 상태를 가져옵니다.(/proc/{pid}/status)
@@ -335,3 +389,18 @@ func PidExist(pid int) (bool, error) {
 
 	return false, err
 }
+
+// func (lp *Processes) FindProcessByName(name string) ([]LinuxProcess, error) {
+// 	out := []LinuxProcess{}
+// 	for _, p := range lp.ps {
+
+// 		if ok, err := regexp.MatchString(name, p.Comm); err != nil {
+// 			return out, err
+// 		} else {
+// 			if ok {
+// 				out = append(out, p)
+// 			}
+// 		}
+// 	}
+// 	return out, nil
+// }

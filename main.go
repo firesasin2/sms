@@ -8,11 +8,23 @@ import (
 
 func main() {
 
-	// 프로세스 객체를 생성합니다.
-	p, err := NewProcess(flagPid)
+	// 전체 프로세스를 생성합니다.
+	pss, err := NewProcesses()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// 프로세스 이름을 찾습니다.
+	p, err := pss.FindProcessByName(flagPName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 프로세스 객체를 생성합니다.
+	// p, err := NewProcess(1)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// CSV파일 Writer를 생성합니다.
 	fileName := os.Args[0] + ".csv"
