@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"os"
-	"time"
+	"os/signal"
 )
 
 func main() {
@@ -14,44 +14,32 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 프로세스 이름을 찾습니다.
-	p, err := pss.FindProcessByName(flagPName)
+	// 입력받은 이름으로부터 프로세스들을 찾습니다.
+	fpss, err := pss.FindProcessByName(flagPName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// 프로세스 객체를 생성합니다.
-	// p, err := NewProcess(1)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// CSV파일 Writer를 생성합니다.
-	fileName := os.Args[0] + ".csv"
-	CSVWriter, err := WriteCSVLine(fileName)
+	// CSV파일에 Header를 씁니다.
+	name := os.Args[0] + ".csv"
+	w, err := WriteCSVHeader(name)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// CSV파일에 헤더를 씁니다.
-	CSVWriter.Write(MakeCSVHeaderFromProcess(p))
-	CSVWriter.Flush()
+	// 동시에 CSV파일에 쓰기 위해 channel 생성
+	q := make(chan Process)
 
-	for {
-		// 프로세스 상태를 최신으로 유지합니다.
-		err = p.GetProcessStatus()
-		if err != nil {
-			log.Fatal(err)
-		}
+	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
+	go WriteCSVBody(w, q)
 
-		// test 로그
-		log.Println(p)
-
-		// CSV파일에 프로세스 값을 씁니다.
-		CSVWriter.Write(MakeCSVValueFromProcess(p))
-		CSVWriter.Flush()
-
-		// 지정 주기만큼 sleep합니다.
-		time.Sleep(time.Duration(flagInterval) * time.Second)
+	// 찾은 모든 프로세스들을 주기적으로 모니터링합니다.
+	for _, fps := range fpss {
+		go MonitorProcess(fps, q)
 	}
+
+	// 종료대기 : SIGINT (Ctrl+C) 신호를 받을때까지 기다립니다.
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
 }

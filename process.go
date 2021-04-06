@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // Process 구조체
@@ -103,17 +105,18 @@ func NewProcesses() (Processes, error) {
 }
 
 // /Proc 밑의 프로세스들에서 이름으로 프로세스를 찾습니다.
-func (pss *Processes) FindProcessByName(name string) (Process, error) {
+func (pss *Processes) FindProcessByName(name string) ([]Process, error) {
+	fpss := []Process{}
 	for _, ps := range pss.pss {
 		matched, err := regexp.MatchString(name, ps.Name)
 		if err != nil {
-			return ps, err
+			return fpss, err
 		}
 		if matched {
-			return ps, nil
+			fpss = append(fpss, ps)
 		}
 	}
-	return Process{}, fmt.Errorf("프로세스 이름을 찾을 수 없습니다.")
+	return fpss, nil
 }
 
 // 프로세스 상태를 가져옵니다.(/proc/{pid}/status)
@@ -390,17 +393,21 @@ func PidExist(pid int) (bool, error) {
 	return false, err
 }
 
-// func (lp *Processes) FindProcessByName(name string) ([]LinuxProcess, error) {
-// 	out := []LinuxProcess{}
-// 	for _, p := range lp.ps {
+// 프로세스를 모니터한후, channel에 결과를 전송합니다.
+func MonitorProcess(p Process, q chan Process) {
 
-// 		if ok, err := regexp.MatchString(name, p.Comm); err != nil {
-// 			return out, err
-// 		} else {
-// 			if ok {
-// 				out = append(out, p)
-// 			}
-// 		}
-// 	}
-// 	return out, nil
-// }
+	for {
+		// 프로세스 상태를 최신으로 유지합니다.
+		err := p.GetProcessStatus()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		q <- p
+		// test 로그
+		log.Println(p)
+
+		// 지정 주기만큼 sleep합니다.
+		time.Sleep(time.Duration(flagInterval) * time.Second)
+	}
+}

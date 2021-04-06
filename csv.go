@@ -3,22 +3,33 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
-	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strconv"
 	"time"
 )
 
-func WriteCSVLine(fileName string) (*csv.Writer, error) {
+// CSV 헤더를 만듭니다.
+func WriteCSVHeader(fileName string) (*csv.Writer, error) {
 
-	csvfile := fmt.Sprintf(fileName)
-	f, err := os.OpenFile(csvfile, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
+	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
 	if err != nil {
 		return nil, err
 	}
 
-	return csv.NewWriter(bufio.NewWriter(f)), nil
+	w := csv.NewWriter(bufio.NewWriter(f))
+
+	// CSV파일에 헤더를 씁니다.
+	p, err := NewProcess(os.Getpid())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w.Write(MakeCSVHeaderFromProcess(p))
+	w.Flush()
+
+	return w, nil
 }
 
 // CSV파일 헤더를 만듭니다.
@@ -63,4 +74,15 @@ func MakeCSVValueFromProcess(p Process) []string {
 	}
 
 	return line
+}
+
+// CSV Body를 만듭니다.
+func WriteCSVBody(w *csv.Writer, q chan Process) {
+
+	for {
+		// CSV파일에 프로세스 값을 씁니다.
+		p := <-q
+		w.Write(MakeCSVValueFromProcess(p))
+		w.Flush()
+	}
 }
