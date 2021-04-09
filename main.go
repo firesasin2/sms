@@ -8,6 +8,13 @@ import (
 
 func main() {
 
+	// Hertz를 구합니다.
+	var err error
+	Hertz, err = GetHertz()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// 전체 프로세스를 생성합니다.
 	pss, err := NewProcesses()
 	if err != nil {

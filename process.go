@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,13 +16,13 @@ import (
 
 // Process 구조체
 type Process struct {
+	Pid       int
+	PPid      int
 	Name      string
 	Umask     string
 	State     string
 	Tgid      int
 	Ngid      int
-	Pid       int
-	PPid      int
 	TracerPid int
 	Uid       []int32
 	Gid       []int32
@@ -44,7 +45,39 @@ type Process struct {
 	Threads    int
 	NoNewPrivs int
 	Seccomp    int
+
+	UpTime     int
+	Utime      int
+	Stime      int
+	StartTime  int
+	CreateTime int
+
+	ModifyTime int
+
+	TotalCPU   int
+	CPUPercent string
 }
+
+type Stat struct {
+	Cpu       string
+	User      int
+	Nice      int
+	System    int
+	Idle      int
+	Iowait    int
+	Irq       int
+	Softirq   int
+	Steal     int
+	Guest     int
+	Guestnice int
+
+	Total int
+}
+
+var (
+	Hertz    = 100
+	ProcStat = []Stat{}
+)
 
 type Processes struct {
 	pss []Process
@@ -53,7 +86,8 @@ type Processes struct {
 // 프로세스 정보를 가져옵니다.
 func NewProcess(pid int) (Process, error) {
 	p := Process{
-		Pid: pid,
+		Pid:        pid,
+		ModifyTime: 0,
 	}
 
 	// pid가 존재하는지 검사합니다.
@@ -117,6 +151,149 @@ func (pss *Processes) FindProcessByName(name string) ([]Process, error) {
 		}
 	}
 	return fpss, nil
+}
+
+// 프로세스 상태를 가져옵니다.(/proc/stat)
+func GetProcStat() (Stat, error) {
+
+	s := Stat{}
+
+	f, err := os.Open(fmt.Sprintf("/proc/stat"))
+	if err != nil {
+		return s, err
+	}
+	defer f.Close()
+
+	w := bufio.NewScanner(f)
+	for w.Scan() {
+
+		line := w.Text()
+
+		w := strings.Fields(line)
+		if len(w) < 2 {
+			continue
+		}
+		// cpu만 분석합니다.
+		if !strings.HasPrefix(w[0], "cpu") {
+			continue
+		}
+
+		s.Cpu = w[0]
+
+		value, err := strconv.Atoi(w[1])
+		if err != nil {
+			return s, err
+		}
+		s.User = value
+
+		value, err = strconv.Atoi(w[2])
+		if err != nil {
+			return s, err
+		}
+		s.Nice = value
+
+		value, err = strconv.Atoi(w[3])
+		if err != nil {
+			return s, err
+		}
+		s.System = value
+
+		value, err = strconv.Atoi(w[4])
+		if err != nil {
+			return s, err
+		}
+		s.Idle = value
+
+		value, err = strconv.Atoi(w[5])
+		if err != nil {
+			return s, err
+		}
+		s.Iowait = value
+
+		value, err = strconv.Atoi(w[6])
+		if err != nil {
+			return s, err
+		}
+		s.Irq = value
+
+		value, err = strconv.Atoi(w[7])
+		if err != nil {
+			return s, err
+		}
+		s.Softirq = value
+
+		value, err = strconv.Atoi(w[8])
+		if err != nil {
+			return s, err
+		}
+		s.Steal = value
+
+		s.Total = s.User + s.Nice + s.System + s.Idle + s.Iowait + s.Irq + s.Softirq + s.Steal
+	}
+
+	return s, nil
+}
+
+// 프로세스 상태를 가져옵니다.(/proc/{pid}/stat)
+func (p *Process) GetProcessStat() error {
+
+	// Process 정보를 얻기 위해 /proc/{pid}/stat를 파싱합니다.
+	d, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/stat", p.Pid))
+	if err != nil {
+		return err
+	}
+	w := strings.Fields(string(d))
+
+	if len(w) < 22 {
+		return fmt.Errorf("stat 파일 파싱 오류 : 예상한 길이보다 작습니다.")
+	}
+
+	value, err := strconv.Atoi(w[0])
+	if err != nil {
+		return err
+	}
+	p.UpTime = value
+
+	value, err = strconv.Atoi(w[13])
+	if err != nil {
+		return err
+	}
+	p.Utime = value
+
+	value, err = strconv.Atoi(w[14])
+	if err != nil {
+		return err
+	}
+	p.Stime = value
+
+	value, err = strconv.Atoi(w[21])
+	if err != nil {
+		return err
+	}
+	p.StartTime = value
+
+	// uptime을 구합니다.
+	uptimeFileBytes, err := ioutil.ReadFile("/proc/uptime")
+	if err != nil {
+		return err
+	}
+	uptimeFileString := string(uptimeFileBytes)
+	uptimeString := strings.Split(uptimeFileString, " ")[0]
+	fvalue, err := strconv.ParseFloat(uptimeString, 64)
+	if err != nil {
+		return err
+	}
+	uptime := fvalue
+
+	// createTime을 구합니다.
+	now := int(time.Now().Unix())
+	p.CreateTime = now - int(uptime) + (p.StartTime / 100)
+
+	p.ModifyTime = now
+
+	//log.Println(p.CreateTime, uptime, Hertz, p.StartTime/100, p.UpTime, p.Utime, p.Stime)
+
+	return nil
 }
 
 // 프로세스 상태를 가져옵니다.(/proc/{pid}/status)
@@ -372,6 +549,9 @@ func (p *Process) GetProcessStatus() error {
 		}
 	}
 
+	now := int(time.Now().Unix())
+	p.ModifyTime = now
+
 	return nil
 }
 
@@ -393,19 +573,82 @@ func PidExist(pid int) (bool, error) {
 	return false, err
 }
 
+// Hertz를 구합니다.
+func GetHertz() (int, error) {
+	// Hertz를 구합니다.
+	HertzOutput, err := exec.Command("getconf", "CLK_TCK").Output()
+	if err != nil {
+		log.Println(err)
+		return -1, err
+	}
+	HertzArray := strings.Split(string(HertzOutput), "\n")[0]
+	value, err := strconv.Atoi(strings.Fields(HertzArray)[0])
+	if err != nil {
+		log.Println(err)
+		return -1, err
+	}
+
+	return value, nil
+}
+
+func (p *Process) GetTotalCPU() error {
+
+	// /proc/stat를 가져옵니다.
+	ProcStat, err := GetProcStat()
+	if err != nil {
+		return err
+	}
+
+	p.TotalCPU = ProcStat.Total
+
+	return nil
+}
+
+// CPU 사용량(%)을 계산합니다.
+func calculateCPUPercent(p Process, oldProcess Process) (float64, error) {
+	diff := float64(p.TotalCPU - oldProcess.TotalCPU)
+	percent := 100.0 * ((float64(p.Utime+p.Stime) - float64(oldProcess.Utime+oldProcess.Stime)) / diff)
+
+	return percent, nil
+}
+
 // 프로세스를 모니터한후, channel에 결과를 전송합니다.
 func MonitorProcess(p Process, q chan Process) {
 
-	for {
+	for i := 0; ; i++ {
+		var err error
+
+		oldProcess := p
+
 		// 프로세스 상태를 최신으로 유지합니다.
-		err := p.GetProcessStatus()
+		err = p.GetProcessStatus()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = p.GetProcessStat()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = p.GetTotalCPU()
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		p.CPUPercent = "0.00"
+		// 첫번째가 아니라면, CPU 사용 퍼센트를 계산합니다.
+		if i != 0 {
+			percent, err := calculateCPUPercent(p, oldProcess)
+			if err != nil {
+				log.Fatal(err)
+			}
+			p.CPUPercent = fmt.Sprintf("%.2f", percent)
+		}
+
+		// CSV에 프로세스 현재 상태를 씁니다.
 		q <- p
+
 		// test 로그
-		log.Println(p)
+		log.Println(p.Name, p.Pid, p.CPUPercent)
 
 		// 지정 주기만큼 sleep합니다.
 		time.Sleep(time.Duration(flagInterval) * time.Second)

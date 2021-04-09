@@ -18,7 +18,7 @@ func init() {
 	flag.BoolVar(&flagHelp, "h", false, "도움말")
 	flag.BoolVar(&flagVersion, "v", false, "버전")
 	//flag.IntVar(&flagPid, "pid", 1, "프로세스 아이디")
-	flag.StringVar(&flagPName, "pname", "nginx", "프로세스 이름")
+	flag.StringVar(&flagPName, "p", "nginx", "프로세스 이름")
 	flag.IntVar(&flagInterval, "i", 20, "수집 주기")
 	flag.Parse()
 
@@ -41,8 +41,8 @@ func PrintHelp() {
 	fmt.Println(`  도움말`)
 	// fmt.Println(`  -pid`)
 	// fmt.Println(`  프로세스 아이디`)
-	fmt.Println(`  -pname`)
-	fmt.Println(`  프로세스 아이디`)
+	fmt.Println(`  -p`)
+	fmt.Println(`  프로세스 이름`)
 	fmt.Println(`  -i`)
 	fmt.Println(`  수집 주기`)
 }
