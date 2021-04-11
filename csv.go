@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// CSV 헤더를 만듭니다.
+// CSV 헤더를 파일에 씁니다.
 func WriteCSVHeader(fileName string) (*csv.Writer, error) {
 
 	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
@@ -32,7 +32,7 @@ func WriteCSVHeader(fileName string) (*csv.Writer, error) {
 	return w, nil
 }
 
-// CSV파일 헤더를 만듭니다.
+// CSV파일 헤더를 만듭니다.(Process로부터)
 func MakeCSVHeaderFromProcess(p Process) []string {
 	line := []string{}
 

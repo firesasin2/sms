@@ -79,10 +79,6 @@ var (
 	ProcStat = []Stat{}
 )
 
-type Processes struct {
-	pss []Process
-}
-
 // 프로세스 정보를 가져옵니다.
 func NewProcess(pid int) (Process, error) {
 	p := Process{
@@ -100,42 +96,6 @@ func NewProcess(pid int) (Process, error) {
 	}
 
 	return p, nil
-}
-
-// /Proc 밑의 프로세스들을 가지고 옵니다.
-func NewProcesses() (Processes, error) {
-	var pss Processes
-
-	fss, err := ioutil.ReadDir("/proc/")
-	if err != nil {
-		return pss, err
-	}
-
-	// /proc Dir를 순회합니다.
-	for _, fs := range fss {
-		if !fs.IsDir() {
-			return pss, err
-		}
-
-		Pid, err := strconv.Atoi(fs.Name())
-		if err != nil {
-			continue
-		}
-		// 프로세스 객체를 생성합니다.
-		p, err := NewProcess(Pid)
-		if err != nil {
-			continue
-		}
-
-		// 프로세스 상태 정보를 가져옵니다.
-		err = p.GetProcessStatus()
-		if err != nil {
-			continue
-		}
-
-		pss.pss = append(pss.pss, p)
-	}
-	return pss, nil
 }
 
 // /Proc 밑의 프로세스들에서 이름으로 프로세스를 찾습니다.
@@ -287,7 +247,7 @@ func (p *Process) GetProcessStat() error {
 
 	// createTime을 구합니다.
 	now := int(time.Now().Unix())
-	p.CreateTime = now - int(uptime) + (p.StartTime / 100)
+	p.CreateTime = now - int(uptime) + (p.StartTime / Hertz)
 
 	p.ModifyTime = now
 
@@ -616,6 +576,9 @@ func calculateCPUPercent(p Process, oldProcess Process) (float64, error) {
 func MonitorProcess(p Process, q chan Process) {
 
 	for i := 0; ; i++ {
+		// 지정 주기만큼 sleep합니다.
+		time.Sleep(time.Duration(flagInterval) * time.Second)
+
 		var err error
 
 		oldProcess := p
@@ -623,15 +586,18 @@ func MonitorProcess(p Process, q chan Process) {
 		// 프로세스 상태를 최신으로 유지합니다.
 		err = p.GetProcessStatus()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 		err = p.GetProcessStat()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 		err = p.GetTotalCPU()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 
 		p.CPUPercent = "0.00"
@@ -639,7 +605,8 @@ func MonitorProcess(p Process, q chan Process) {
 		if i != 0 {
 			percent, err := calculateCPUPercent(p, oldProcess)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
+				continue
 			}
 			p.CPUPercent = fmt.Sprintf("%.2f", percent)
 		}
@@ -649,8 +616,5 @@ func MonitorProcess(p Process, q chan Process) {
 
 		// test 로그
 		log.Println(p.Name, p.Pid, p.CPUPercent)
-
-		// 지정 주기만큼 sleep합니다.
-		time.Sleep(time.Duration(flagInterval) * time.Second)
 	}
 }
