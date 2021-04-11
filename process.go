@@ -56,6 +56,8 @@ type Process struct {
 
 	TotalCPU   int
 	CPUPercent string
+
+	m Memory
 }
 
 type Stat struct {
@@ -583,21 +585,24 @@ func MonitorProcess(p Process, q chan Process) {
 
 		oldProcess := p
 
-		// 프로세스 상태를 최신으로 유지합니다.
+		// 프로세스 상태 정보를 가져옵니다.
 		err = p.GetProcessStatus()
 		if err != nil {
 			log.Println(err)
-			continue
 		}
 		err = p.GetProcessStat()
 		if err != nil {
 			log.Println(err)
-			continue
 		}
 		err = p.GetTotalCPU()
 		if err != nil {
 			log.Println(err)
-			continue
+		}
+
+		// 메모리 상태정보를 가져옵니다.
+		err = p.m.GetProcessMomory(p.Pid)
+		if err != nil {
+			log.Println(err)
 		}
 
 		p.CPUPercent = "0.00"
@@ -612,9 +617,9 @@ func MonitorProcess(p Process, q chan Process) {
 		}
 
 		// CSV에 프로세스 현재 상태를 씁니다.
-		q <- p
+		//q <- p
 
 		// test 로그
-		log.Println(p.Name, p.Pid, p.CPUPercent)
+		log.Println(p.Name, p.Pid, p.CPUPercent, p.m.Pss)
 	}
 }
