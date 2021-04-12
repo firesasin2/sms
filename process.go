@@ -569,49 +569,41 @@ func calculateCPUPercent(p Process, oldProcess Process) (float64, error) {
 // 프로세스를 모니터한후, channel에 결과를 전송합니다.
 func MonitorProcess(p Process, q chan Process) {
 
-	for i := 0; ; i++ {
-		// 지정 주기만큼 sleep합니다.
-		time.Sleep(time.Duration(flagInterval) * time.Second)
+	var err error
 
-		var err error
+	oldProcess := p
 
-		oldProcess := p
-
-		// 프로세스 상태 정보를 가져옵니다.
-		err = p.GetProcessStatus()
-		if err != nil {
-			log.Println(err)
-		}
-		err = p.GetProcessStat()
-		if err != nil {
-			log.Println(err)
-		}
-		err = p.GetTotalCPU()
-		if err != nil {
-			log.Println(err)
-		}
-
-		// 메모리 상태정보를 가져옵니다.
-		err = p.Memory.GetProcessMomory(p.Pid)
-		if err != nil {
-			log.Println(err)
-		}
-
-		p.CPUPercent = "0.00"
-		// 첫번째가 아니라면, CPU 사용 퍼센트를 계산합니다.
-		if i != 0 {
-			percent, err := calculateCPUPercent(p, oldProcess)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			p.CPUPercent = fmt.Sprintf("%.2f", percent)
-		}
-
-		// CSV에 프로세스 현재 상태를 씁니다.
-		q <- p
-
-		// test 로그
-		log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
+	// 프로세스 상태 정보를 가져옵니다.
+	err = p.GetProcessStatus()
+	if err != nil {
+		log.Println(err)
 	}
+	err = p.GetProcessStat()
+	if err != nil {
+		log.Println(err)
+	}
+	err = p.GetTotalCPU()
+	if err != nil {
+		log.Println(err)
+	}
+
+	// 메모리 상태정보를 가져옵니다.
+	err = p.Memory.GetProcessMomory(p.Pid)
+	if err != nil {
+		log.Println(err)
+	}
+
+	p.CPUPercent = "0.00"
+	// CPU 사용 퍼센트를 계산합니다.
+	percent, err := calculateCPUPercent(p, oldProcess)
+	if err != nil {
+		log.Println(err)
+	}
+	p.CPUPercent = fmt.Sprintf("%.2f", percent)
+
+	// CSV에 프로세스 현재 상태를 씁니다.
+	q <- p
+
+	// test 로그
+	//log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 )
 
 func main() {
@@ -40,10 +41,14 @@ func main() {
 	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
 	go WriteCSVBody(w, q)
 
-	// 찾은 모든 프로세스들을 주기적으로 모니터링합니다.
-	for _, fps := range fpss {
-		go MonitorProcess(fps, q)
-	}
+	ticker := time.NewTicker(time.Duration(flagInterval) * time.Second)
+	go func() {
+		for _ = range ticker.C {
+			for _, ps := range fpss {
+				go MonitorProcess(ps, q)
+			}
+		}
+	}()
 
 	// 종료대기 : SIGINT (Ctrl+C) 신호를 받을때까지 기다립니다.
 	c := make(chan os.Signal, 1)
