@@ -35,11 +35,12 @@ func init() {
 		PrintVersion()
 		os.Exit(0)
 	}
-	flagfieldparsed, err := ParseFlag(flagfield)
+
+	parsed, err := ParseFlag(flagfield)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(flagfieldparsed)
+	flagfieldparsed = parsed
 }
 
 // help
