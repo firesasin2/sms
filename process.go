@@ -52,12 +52,10 @@ type Process struct {
 	StartTime  int
 	CreateTime int
 
-	ModifyTime int
-
 	TotalCPU   int
 	CPUPercent string
 
-	m Memory
+	Memory Memory
 }
 
 type Stat struct {
@@ -84,8 +82,7 @@ var (
 // 프로세스 정보를 가져옵니다.
 func NewProcess(pid int) (Process, error) {
 	p := Process{
-		Pid:        pid,
-		ModifyTime: 0,
+		Pid: pid,
 	}
 
 	// pid가 존재하는지 검사합니다.
@@ -250,8 +247,6 @@ func (p *Process) GetProcessStat() error {
 	// createTime을 구합니다.
 	now := int(time.Now().Unix())
 	p.CreateTime = now - int(uptime) + (p.StartTime / Hertz)
-
-	p.ModifyTime = now
 
 	//log.Println(p.CreateTime, uptime, Hertz, p.StartTime/100, p.UpTime, p.Utime, p.Stime)
 
@@ -511,9 +506,6 @@ func (p *Process) GetProcessStatus() error {
 		}
 	}
 
-	now := int(time.Now().Unix())
-	p.ModifyTime = now
-
 	return nil
 }
 
@@ -600,7 +592,7 @@ func MonitorProcess(p Process, q chan Process) {
 		}
 
 		// 메모리 상태정보를 가져옵니다.
-		err = p.m.GetProcessMomory(p.Pid)
+		err = p.Memory.GetProcessMomory(p.Pid)
 		if err != nil {
 			log.Println(err)
 		}
@@ -617,9 +609,9 @@ func MonitorProcess(p Process, q chan Process) {
 		}
 
 		// CSV에 프로세스 현재 상태를 씁니다.
-		//q <- p
+		q <- p
 
 		// test 로그
-		log.Println(p.Name, p.Pid, p.CPUPercent, p.m.Pss)
+		log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
 	}
 }

@@ -3,15 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"strings"
 )
 
 var (
-	flagHelp     bool
-	flagVersion  bool
-	flagPid      int
-	flagPName    string
-	flagInterval int
+	flagHelp        bool
+	flagVersion     bool
+	flagPid         int
+	flagPName       string
+	flagInterval    int
+	flagfield       string
+	flagfieldparsed []string
 )
 
 func init() {
@@ -20,6 +24,7 @@ func init() {
 	//flag.IntVar(&flagPid, "pid", 1, "프로세스 아이디")
 	flag.StringVar(&flagPName, "p", "nginx", "프로세스 이름")
 	flag.IntVar(&flagInterval, "i", 20, "수집 주기")
+	flag.StringVar(&flagfield, "f", "TIME,CPU,MEMORYBYTES,CMD1,PID,PPID", "필드")
 	flag.Parse()
 
 	if flagHelp {
@@ -30,6 +35,11 @@ func init() {
 		PrintVersion()
 		os.Exit(0)
 	}
+	flagfieldparsed, err := ParseFlag(flagfield)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(flagfieldparsed)
 }
 
 // help
@@ -51,4 +61,14 @@ func PrintHelp() {
 func PrintVersion() {
 	fmt.Println(`Component Name: sms V0.1`)
 	fmt.Println(`Component ReleaseVersion: V0.1(2021-04)`)
+}
+
+// Flag를 파싱합니다.
+func ParseFlag(flagfield string) ([]string, error) {
+	var result []string
+	fields := strings.Split(flagfield, ",")
+	for _, field := range fields {
+		result = append(result, field)
+	}
+	return result, nil
 }

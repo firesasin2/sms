@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"log"
 	"os"
-	"reflect"
 	"strconv"
 	"time"
 )
@@ -36,15 +35,8 @@ func WriteCSVHeader(fileName string) (*csv.Writer, error) {
 func MakeCSVHeaderFromProcess(p Process) []string {
 	line := []string{}
 
-	// 첫번째 필드는 현재 시간을 기록합니다.
-	line = append(line, "Time")
-
-	// Process 구조체의 네임필드를 순회합니다.
-	e := reflect.ValueOf(&p).Elem()
-	fieldNum := e.NumField()
-	for i := 0; i < fieldNum; i++ {
-		t := e.Type().Field(i)
-		line = append(line, t.Name)
+	for _, field := range flagfieldparsed {
+		line = append(line, field)
 	}
 
 	return line
@@ -54,22 +46,22 @@ func MakeCSVHeaderFromProcess(p Process) []string {
 func MakeCSVValueFromProcess(p Process) []string {
 	line := []string{}
 
-	// 첫번째 필드는 현재 시간을 기록합니다.
-	line = append(line, strconv.FormatInt(time.Now().Unix(), 10))
-
-	// Process 구조체의 값필드를 순회합니다.
-	e := reflect.ValueOf(&p).Elem()
-	fieldNum := e.NumField()
-	for i := 0; i < fieldNum; i++ {
-		v := e.Field(i).Interface()
-
-		switch t := reflect.TypeOf(v); t.Kind() {
-		case reflect.Int:
-			line = append(line, strconv.Itoa(v.(int)))
-		case reflect.String:
-			line = append(line, v.(string))
-		default:
-			line = append(line, "")
+	for _, field := range flagfieldparsed {
+		switch field {
+		case "TIME":
+			line = append(line, strconv.FormatInt(time.Now().Unix(), 10))
+		case "CPU":
+			line = append(line, p.CPUPercent)
+		case "MEMORYBYTES":
+			line = append(line, strconv.Itoa(p.Memory.Pss))
+		case "CMD1":
+			line = append(line, p.Name)
+		case "CMD2":
+			line = append(line, p.Name)
+		case "PID":
+			line = append(line, strconv.Itoa(p.Pid))
+		case "PPID":
+			line = append(line, strconv.Itoa(p.PPid))
 		}
 	}
 
