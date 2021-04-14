@@ -70,7 +70,7 @@ func MakeCSVValueFromProcess(p Process) []string {
 }
 
 // CSV Body를 만듭니다.
-func WriteCSVBody(w *csv.Writer, q chan Process) {
+func WriteCSVBody(w *csv.Writer) {
 
 	for {
 		// CSV파일에 프로세스 값을 씁니다.

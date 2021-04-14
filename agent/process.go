@@ -603,6 +603,7 @@ func MonitorProcess(p Process, q chan Process) {
 
 	// CSV에 프로세스 현재 상태를 씁니다.
 	q <- p
+	q2 <- p
 
 	// test 로그
 	//log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)

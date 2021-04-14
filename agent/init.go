@@ -18,6 +18,12 @@ var (
 	flagfieldparsed []string
 )
 
+// 동시에 CSV파일에 쓰기 위해 channel
+var (
+	q  chan Process
+	q2 chan Process
+)
+
 func init() {
 	flag.BoolVar(&flagHelp, "h", false, "도움말")
 	flag.BoolVar(&flagVersion, "v", false, "버전")
@@ -36,6 +42,11 @@ func init() {
 		os.Exit(0)
 	}
 
+	// channel 초기화
+	q = make(chan Process)
+	q2 = make(chan Process)
+
+	// csv에서 어떤 컬럼을 쓸지
 	parsed, err := ParseFlag(flagfield)
 	if err != nil {
 		log.Fatal(err)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"time"
@@ -35,12 +36,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 동시에 CSV파일에 쓰기 위해 channel 생성
-	q := make(chan Process)
-
 	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
-	go WriteCSVBody(w, q)
+	go WriteCSVBody(w)
 
+	conn, err := net.Dial("tcp", ":1234")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	// 서버에 데이터를 송신합니다.
+	go WriteDataToServer(conn)
+
+	// 특정 주기마다 모니터링합니다.
 	ticker := time.NewTicker(time.Duration(flagInterval) * time.Second)
 	go func() {
 		for _ = range ticker.C {
