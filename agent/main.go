@@ -23,12 +23,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 입력받은 이름으로부터 프로세스들을 찾습니다.
-	fpss, err := pss.FindProcessByName(flagPName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// CSV파일에 Header를 씁니다.
 	name := os.Args[0] + ".csv"
 	w, err := WriteCSVHeader(name)
@@ -52,6 +46,13 @@ func main() {
 	ticker := time.NewTicker(time.Duration(flagInterval) * time.Second)
 	go func() {
 		for _ = range ticker.C {
+			// 입력받은 이름으로부터 프로세스들을 찾습니다.
+			fpss, err := pss.FindProcessByName(flagPName)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
 			for _, ps := range fpss {
 				go MonitorProcess(ps, q)
 			}
