@@ -1,11 +1,31 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/signal"
 )
 
+// 동시에 CSV파일에 쓰기 위해 channel
+var (
+	q               chan Process
+	flagfieldparsed = []string{"TIME", "CPU", "MEMORYBYTES", "CMD1", "CMD2", "PID", "PPID", "USER", "CREATETIME"}
+)
+
 func main() {
+
+	// channel 초기화
+	q = make(chan Process)
+
+	// CSV파일에 Header를 씁니다.
+	name := os.Args[0] + ".csv"
+	w, err := WriteCSVHeader(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
+	go WriteCSVBody(w)
 
 	// 클라이언트에서 데이터를 수신합니다.
 	go RecieveDataFromServer()

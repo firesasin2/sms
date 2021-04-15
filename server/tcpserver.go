@@ -9,50 +9,6 @@ import (
 	"os"
 )
 
-// Process 구조체
-type Process struct {
-	Pid       int
-	PPid      int
-	Name      string
-	Umask     string
-	State     string
-	Tgid      int
-	Ngid      int
-	TracerPid int
-	Uid       []int32
-	Gid       []int32
-	FDSize    int
-	Groups    int
-	VmPeak    int
-	VmSize    int
-	VmLck     int
-	VmPin     int
-	VmHWM     int
-	VmRSS     int
-
-	VmData int
-	VmStk  int
-	VmExe  int
-	VmLib  int
-	VmPTE  int
-	VmSwap int
-
-	Threads    int
-	NoNewPrivs int
-	Seccomp    int
-
-	UpTime     int
-	Utime      int
-	Stime      int
-	StartTime  int
-	CreateTime int
-
-	TotalCPU   int
-	CPUPercent string
-
-	Memory Memory
-}
-
 type Memory struct {
 	Size int
 	Rss  int
@@ -114,16 +70,16 @@ func ConnHandler(c net.Conn) {
 		jmbytes, other = SplitStream(append(other, data[:readsize]...))
 
 		for _, jmbyte := range jmbytes {
-			//msg := string(jmbyte)
 			//log.Println("DATA : ", msg)
 
 			var p Process
 			err = json.Unmarshal(jmbyte, &p)
 			if err != nil {
 				log.Println(err)
-			} else {
-				log.Println(p)
 			}
+
+			// csv 파일에 정보를 넣기 위해 q에 프로세스를 전달합니다.
+			q <- p
 		}
 	}
 }

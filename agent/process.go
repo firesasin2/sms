@@ -653,8 +653,6 @@ func MonitorProcess(p Process) {
 	}
 	p.CPUPercent = fmt.Sprintf("%.2f", percent)
 
-	log.Println(p)
-
 	// CSV에 프로세스 현재 상태를 씁니다.
 	q <- p
 	q2 <- p

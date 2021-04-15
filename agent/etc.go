@@ -72,7 +72,8 @@ func makeAccount(line string) (Account, error) {
 		ac.Name = field[0]
 		ac.Uid = field[2]
 		ac.Gid = field[3]
-		if ac.PrimaryGroupName, err = convertGidToName(ac.Gid); err != nil {
+		ac.PrimaryGroupName, err = convertGidToName(ac.Gid)
+		if err != nil {
 			log.Println(err)
 		}
 

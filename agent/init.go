@@ -46,7 +46,7 @@ func init() {
 	q = make(chan Process)
 	q2 = make(chan Process)
 
-	// csv에서 어떤 컬럼을 쓸지
+	// csv에서 어떤 컬럼을 쓸지 인자값 받음
 	parsed, err := ParseFlag(flagfield)
 	if err != nil {
 		log.Fatal(err)
