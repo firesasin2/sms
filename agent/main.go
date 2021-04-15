@@ -35,12 +35,11 @@ func main() {
 
 	conn, err := net.Dial("tcp", ":1234")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+	} else {
+		// 서버에 데이터를 송신합니다.
+		go WriteDataToServer(conn)
 	}
-	defer conn.Close()
-
-	// 서버에 데이터를 송신합니다.
-	go WriteDataToServer(conn)
 
 	// 특정 주기마다 모니터링합니다.
 	ticker := time.NewTicker(time.Duration(flagInterval) * time.Second)
@@ -54,7 +53,7 @@ func main() {
 			}
 
 			for _, ps := range fpss {
-				go MonitorProcess(ps, q)
+				go MonitorProcess(ps)
 			}
 		}
 	}()

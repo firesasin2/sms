@@ -11,7 +11,8 @@ import (
 
 // tcp 소켓서버에 데이터를 전달하기 위한 함수
 func WriteDataToServer(conn net.Conn) {
-
+	defer conn.Close()
+	
 	for {
 		// channel에 들어오면 tcp 소켓서버에 보냅니다.
 		p := <-q2

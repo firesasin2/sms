@@ -19,6 +19,7 @@ type Process struct {
 	Pid       int
 	PPid      int
 	Name      string
+	Cmdline string
 	Umask     string
 	State     string
 	Tgid      int
@@ -196,7 +197,7 @@ func GetProcStat() (Stat, error) {
 // 프로세스 상태를 가져옵니다.(/proc/{pid}/stat)
 func (p *Process) GetProcessStat() error {
 
-	// Process 정보를 얻기 위해 /proc/{pid}/stat를 파싱합니다.
+	// /proc/{pid}/stat를 파싱합니다.
 	d, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/stat", p.Pid))
 	if err != nil {
 		return err
@@ -253,9 +254,29 @@ func (p *Process) GetProcessStat() error {
 	return nil
 }
 
+// 프로세스 cmdline를 가져옵니다.(/proc/{pid}/cmdline)
+func (p *Process) GetProcessCmdline() error {
+	bvalue, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", p.Pid))
+	if err != nil {
+		return err
+	}
+	// 널 문자를 띄어 쓰기로 바꿈
+	f := func(r rune) bool {
+		if r == '\u0000' {
+			return true
+		}
+		return false
+	}
+	arr := strings.FieldsFunc(string(bvalue), f)
+	
+	p.Cmdline = strings.Join(arr, " ")
+
+	return nil
+}
+
 // 프로세스 상태를 가져옵니다.(/proc/{pid}/status)
 func (p *Process) GetProcessStatus() error {
-	// Process 정보를 얻기 위해 /proc/{pid}/status를 파싱합니다.
+	// /proc/{pid}/status를 파싱합니다.
 	f, err := os.Open(fmt.Sprintf("/proc/%d/status", p.Pid))
 	if err != nil {
 		return err
@@ -567,7 +588,7 @@ func calculateCPUPercent(p Process, oldProcess Process) (float64, error) {
 }
 
 // 프로세스를 모니터한후, channel에 결과를 전송합니다.
-func MonitorProcess(p Process, q chan Process) {
+func MonitorProcess(p Process) {
 
 	var err error
 
@@ -583,6 +604,10 @@ func MonitorProcess(p Process, q chan Process) {
 		log.Println(err)
 	}
 	err = p.GetTotalCPU()
+	if err != nil {
+		log.Println(err)
+	}
+	err = p.GetProcessCmdline()
 	if err != nil {
 		log.Println(err)
 	}

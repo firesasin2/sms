@@ -30,7 +30,7 @@ func init() {
 	//flag.IntVar(&flagPid, "pid", 1, "프로세스 아이디")
 	flag.StringVar(&flagPName, "p", "nginx", "프로세스 이름")
 	flag.IntVar(&flagInterval, "i", 20, "수집 주기")
-	flag.StringVar(&flagfield, "f", "TIME,CPU,MEMORYBYTES,CMD1,PID,PPID", "필드")
+	flag.StringVar(&flagfield, "f", "TIME,CPU,MEMORYBYTES,CMD1,CMD2,PID,PPID", "필드")
 	flag.Parse()
 
 	if flagHelp {

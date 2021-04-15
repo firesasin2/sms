@@ -58,7 +58,7 @@ func MakeCSVValueFromProcess(p Process) []string {
 		case "CMD1":
 			line = append(line, p.Name)
 		case "CMD2":
-			line = append(line, p.Name)
+			line = append(line, p.Cmdline)
 		case "PID":
 			line = append(line, strconv.Itoa(p.Pid))
 		case "PPID":
