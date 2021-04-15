@@ -18,6 +18,12 @@ func NewProcesses() (Processes, error) {
 		return pss, err
 	}
 
+	// 전체 계정을 가져옵니다.
+	acs, err := GetAccounts()
+	if err != nil {
+		return pss, err
+	}
+
 	// /proc Dir를 순회합니다.
 	for _, fs := range fss {
 		if !fs.IsDir() {
@@ -35,7 +41,7 @@ func NewProcesses() (Processes, error) {
 		}
 
 		// 프로세스 상태 정보를 가져옵니다.
-		err = p.GetProcessStatus()
+		err = p.GetProcessStatus(acs)
 		if err != nil {
 			continue
 		}

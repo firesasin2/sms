@@ -19,14 +19,15 @@ type Process struct {
 	Pid       int
 	PPid      int
 	Name      string
-	Cmdline string
+	Cmdline   string
 	Umask     string
 	State     string
 	Tgid      int
 	Ngid      int
 	TracerPid int
-	Uid       []int32
-	Gid       []int32
+	Uid       []int
+	UserName  string
+	Gid       []int
 	FDSize    int
 	Groups    int
 	VmPeak    int
@@ -268,14 +269,14 @@ func (p *Process) GetProcessCmdline() error {
 		return false
 	}
 	arr := strings.FieldsFunc(string(bvalue), f)
-	
+
 	p.Cmdline = strings.Join(arr, " ")
 
 	return nil
 }
 
 // 프로세스 상태를 가져옵니다.(/proc/{pid}/status)
-func (p *Process) GetProcessStatus() error {
+func (p *Process) GetProcessStatus(acs []Account) error {
 	// /proc/{pid}/status를 파싱합니다.
 	f, err := os.Open(fmt.Sprintf("/proc/%d/status", p.Pid))
 	if err != nil {
@@ -339,12 +340,32 @@ func (p *Process) GetProcessStatus() error {
 
 		case strings.HasPrefix(line, "Uid:"):
 			if len(w) > 4 {
-				// 작성 중
+				p.Uid = make([]int, 0, 4)
+				for i := 1; i <= 4; i++ {
+					value, err := strconv.Atoi(w[i])
+					if err != nil {
+						return err
+					}
+					p.Uid = append(p.Uid, value)
+				}
+				// effective UID
+				value, err := findAccountNameFromUid(p.Uid[1], acs)
+				if err != nil {
+					return err
+				}
+				p.UserName = value
 			}
 
 		case strings.HasPrefix(line, "Gid:"):
 			if len(w) > 4 {
-				// 작성 중
+				p.Gid = make([]int, 0, 4)
+				for i := 1; i <= 4; i++ {
+					value, err := strconv.Atoi(w[i])
+					if err != nil {
+						return err
+					}
+					p.Gid = append(p.Gid, value)
+				}
 			}
 
 		case strings.HasPrefix(line, "FDSize:"):
@@ -592,10 +613,16 @@ func MonitorProcess(p Process) {
 
 	var err error
 
+	// 전체 계정을 가져옵니다.
+	acs, err := GetAccounts()
+	if err != nil {
+		log.Println(err)
+	}
+
 	oldProcess := p
 
 	// 프로세스 상태 정보를 가져옵니다.
-	err = p.GetProcessStatus()
+	err = p.GetProcessStatus(acs)
 	if err != nil {
 		log.Println(err)
 	}
@@ -625,6 +652,8 @@ func MonitorProcess(p Process) {
 		log.Println(err)
 	}
 	p.CPUPercent = fmt.Sprintf("%.2f", percent)
+
+	log.Println(p)
 
 	// CSV에 프로세스 현재 상태를 씁니다.
 	q <- p

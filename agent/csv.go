@@ -63,6 +63,8 @@ func MakeCSVValueFromProcess(p Process) []string {
 			line = append(line, strconv.Itoa(p.Pid))
 		case "PPID":
 			line = append(line, strconv.Itoa(p.PPid))
+		case "USER":
+			line = append(line, p.UserName)
 		case "CREATETIME":
 			line = append(line, strconv.Itoa(p.CreateTime))
 		}
