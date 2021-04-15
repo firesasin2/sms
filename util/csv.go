@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"bufio"
@@ -35,7 +35,6 @@ func WriteCSVHeader(fileName string) (*csv.Writer, error) {
 func MakeCSVHeaderFromProcess(p Process) []string {
 	line := []string{}
 
-	log.Println(flagfieldparsed)
 	for _, field := range flagfieldparsed {
 		line = append(line, field)
 	}

@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	util "github.com/firesasin2/sms/util"
 )
 
 func main() {
@@ -25,13 +27,13 @@ func main() {
 
 	// CSV파일에 Header를 씁니다.
 	name := os.Args[0] + ".csv"
-	w, err := WriteCSVHeader(name)
+	w, err := util.WriteCSVHeader(name)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
-	go WriteCSVBody(w)
+	go util.WriteCSVBody(w)
 
 	conn, err := net.Dial("tcp", ":1234")
 	if err != nil {

@@ -7,7 +7,7 @@ LDFLAGS="-X main.Version=${VERSION} -X main.Build=${RELEASE}${BUILDTIME} -w -s"
 export LDFLAGS
 
 all :
-	go build -ldflags ${LDFLAGS} -o agent
+	go build -ldflags ${LDFLAGS} -o server
 
 clean :
-	@rm -f ./agent
+	@rm -f ./server
