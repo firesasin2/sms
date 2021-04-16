@@ -22,6 +22,7 @@ var (
 var (
 	q  chan Process
 	q2 chan Process
+	q3 chan Process
 )
 
 func init() {
@@ -45,6 +46,7 @@ func init() {
 	// channel 초기화
 	q = make(chan Process)
 	q2 = make(chan Process)
+	q3 = make(chan Process)
 
 	// csv에서 어떤 컬럼을 쓸지 인자값 받음
 	parsed, err := ParseFlag(flagfield)

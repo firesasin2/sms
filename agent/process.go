@@ -609,7 +609,7 @@ func calculateCPUPercent(p Process, oldProcess Process) (float64, error) {
 }
 
 // 프로세스를 모니터한후, channel에 결과를 전송합니다.
-func MonitorProcess(p Process) {
+func MonitorProcess(p Process, oldProcess Process) {
 
 	var err error
 
@@ -618,8 +618,6 @@ func MonitorProcess(p Process) {
 	if err != nil {
 		log.Println(err)
 	}
-
-	oldProcess := p
 
 	// 프로세스 상태 정보를 가져옵니다.
 	err = p.GetProcessStatus(acs)
@@ -656,7 +654,9 @@ func MonitorProcess(p Process) {
 	// CSV에 프로세스 현재 상태를 씁니다.
 	q <- p
 	q2 <- p
+	// 신규 프로세스 정보로 갱신합니다.
+	q3 <- p
 
 	// test 로그
-	log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
+	//log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
 }

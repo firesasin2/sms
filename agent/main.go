@@ -32,15 +32,16 @@ func main() {
 	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
 	go WriteCSVBody(w)
 
-	//클라이언트
+	// 서버에 연결합니다(tcp, ssl)
 	conn := NewClient("127.0.0.1:1234", "../etc/client.pem", "password")
 	err = conn.Connect()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	} else {
 		go WriteDataToServer(conn.conn)
 	}
 
+	savedProcesses := make(map[int]Process)
 	// 특정 주기마다 모니터링합니다.
 	ticker := time.NewTicker(time.Duration(flagInterval) * time.Second)
 	go func() {
@@ -53,8 +54,17 @@ func main() {
 			}
 
 			for _, ps := range fpss {
-				go MonitorProcess(ps)
+				// 이전 프로세스 정보를 가져옵니다.
+				go MonitorProcess(ps, savedProcesses[ps.Pid])
 			}
+		}
+	}()
+	// 이전 프로세스 상태를 관리합니다.
+	go func() {
+		for {
+			p := <-q3
+			// 신규 프로세스 정보로 갱신합니다.
+			savedProcesses[p.Pid] = p
 		}
 	}()
 
