@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"time"
@@ -33,12 +32,13 @@ func main() {
 	// q에 요청이 들어오면, CSV파일에 q내용을 씁니다.
 	go WriteCSVBody(w)
 
-	conn, err := net.Dial("tcp", ":1234")
+	//클라이언트
+	conn := NewClient("127.0.0.1:1234", "../etc/client.pem", "password")
+	err = conn.Connect()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	} else {
-		// 서버에 데이터를 송신합니다.
-		go WriteDataToServer(conn)
+		go WriteDataToServer(conn.conn)
 	}
 
 	// 특정 주기마다 모니터링합니다.

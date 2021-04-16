@@ -658,5 +658,5 @@ func MonitorProcess(p Process) {
 	q2 <- p
 
 	// test 로그
-	//log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
+	log.Println(p.Name, p.Pid, p.CPUPercent, p.Memory.Pss)
 }

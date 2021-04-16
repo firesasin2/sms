@@ -56,6 +56,12 @@ type Process struct {
 	Memory Memory
 }
 
+type Memory struct {
+	Size int
+	Rss  int
+	Pss  int
+}
+
 type Stat struct {
 	Cpu       string
 	User      int

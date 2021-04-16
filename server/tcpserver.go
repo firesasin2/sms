@@ -1,79 +1,36 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"log"
-	"net"
-	"os"
 )
 
-type Memory struct {
-	Size int
-	Rss  int
-	Pss  int
-}
-
-func RecieveDataFromServer() {
+func RecieveDataFromClient() {
 
 	port := "1234"
-	protocol := "tcp"
 	address := "0.0.0.0"
 
-	listen, err := net.Listen(protocol, address+":"+port)
+	s, err := NewServer(address+":"+port, "../etc/server.pem", false)
 	if err != nil {
-		log.Printf("Socket listen port %s failed : %s\n", port, err)
-		os.Exit(1)
+		log.Println(err)
 	}
-	defer listen.Close()
-
-	log.Println("Begin listen port: ", port)
-
-	for {
-		conn, err := listen.Accept()
-		if err != nil {
-			log.Println("listen.Accept() failed : ", err)
-			continue
-		}
-
-		log.Println("conn Accepted")
-		go ConnHandler(conn)
-	}
+	go s.Handle(ConnHandler)
 }
 
-var MSGHEADERLEN int = 4
-
-func ConnHandler(c net.Conn) {
-
-	jmbytes := [][]byte{}
-	other := []byte{}
-
-	readsize := 0
-	var err error
+//서버
+func ConnHandler(peer string, c *Client) {
+	defer c.Close()
 
 	for {
-		data := make([]byte, 20000)
-
-		readsize, err = c.Read(data)
+		msgs, err := c.Read()
 		if err != nil {
-			if err != io.EOF {
-				log.Println(err)
-			}
-			return
+			log.Println(err)
+			break
 		}
-
-		if readsize == 0 {
-			continue
-		}
-
-		jmbytes, other = SplitStream(append(other, data[:readsize]...))
-
-		for _, jmbyte := range jmbytes {
-			//log.Println("DATA : ", msg)
-
+		for _, msg := range msgs {
+			//log.Println("[%d번째 메시지] From:%s Msg:%s\n", i, peer, string(msg))
 			var p Process
-			err = json.Unmarshal(jmbyte, &p)
+			err = json.Unmarshal(msg, &p)
 			if err != nil {
 				log.Println(err)
 			}
@@ -82,9 +39,4 @@ func ConnHandler(c net.Conn) {
 			q <- p
 		}
 	}
-}
-
-func SplitStream(b []byte) ([][]byte, []byte) {
-	bs := bytes.Split(b, []byte{0})
-	return bs[:len(bs)-1], bs[len(bs)-1]
 }
